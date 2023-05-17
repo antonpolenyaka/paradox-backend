@@ -37,14 +37,43 @@ export function dateToTimestamp(date) {
     return timestampInSeconds;
 }
 
-// In seconds
-export function dateToTimestamp000(date) {
-    date.setUTCHours(0, 0, 0, 0); // Establecer la hora a las 00:00:00 UTC
+// In seconds Day
+export function dateToTimestampD000(date) {
+    date.setUTCHours(0, 0, 0, 0); // Establecer la hora
     return dateToTimestamp(date);
 }
 
-export function dateToTimestamp999(date) {
-    date.setUTCHours(23, 59, 59, 999); // Establecer la hora a las 00:00:00 UTC
+// In seconds Month
+export function dateToTimestampM000(date) {
+    date.setUTCHours(0, 0, 0, 0); // Establecer la hora
+    date.setDate(1); // Establecer el día como el primer día del mes
+    return dateToTimestamp(date);
+}
+
+// In seconds Year
+export function dateToTimestampY000(date) {
+    date.setUTCHours(0, 0, 0, 0); // Establecer la hora
+    date.setUTCMonth(0, 1); // Establecer el mes como enero y el día como el primer día del año
+    return dateToTimestamp(date);
+}
+
+// End of Day
+export function dateToTimestampD999(date) {
+    date.setUTCHours(23, 59, 59, 999); // Establecer la hora
+    return dateToTimestamp(date);
+}
+
+// End of Month
+export function dateToTimestampM999(date) {
+    date.setUTCHours(23, 59, 59, 999); // Establecer la hora
+    date.setUTCMonth(date.getUTCMonth() + 1, 0); // Establecer el mes siguiente y el día anterior al primer día del mes siguiente
+    return dateToTimestamp(date);
+}
+
+// End of Year
+export function dateToTimestampY999(date) {
+    date.setUTCHours(23, 59, 59, 999); // Establecer la hora
+    date.setUTCMonth(11, 31); // Establecer el mes y el día
     return dateToTimestamp(date);
 }
 
@@ -86,6 +115,21 @@ export function timestampToHumanYear(timestamp) {
 
     const formattedDate = `${year}`;
     return formattedDate;
+}
+
+export function incrementToNextMonth(date) {
+    const newDate = new Date(date.getTime());
+    newDate.setUTCDate(1);
+    newDate.setUTCMonth(newDate.getUTCMonth() + 1);
+    return newDate;
+}
+
+export function incrementToNextYear(date) {
+    const newDate = new Date(date.getTime());
+    newDate.setUTCFullYear(newDate.getUTCFullYear() + 1);
+    newDate.setUTCMonth(0);
+    newDate.setUTCDate(1);
+    return newDate;
 }
 
 export default { fNow };
