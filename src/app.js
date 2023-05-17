@@ -15,7 +15,7 @@ logger.info(`${fNow()} Starting service!`);
 const app = express();
 
 // En el campo segundo coloc '*/5' para ejecutar una tarea en consola cada 5 segundos 
-cron.schedule("*/5 * * * * *", processTVL);
+cron.schedule(process.env.TVL_CRON, processTVL);
 
 // Ejecutamos la aplicación en el puerto 3000
 const desiredPort = process.env.START_PORT;

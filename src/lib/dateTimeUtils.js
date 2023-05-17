@@ -13,4 +13,12 @@ export function fNow() {
     return currentDateAndTime;
 }
 
+export function unixTimestamp() {
+    return Date.now();
+}
+
+export function unixTimestampInSeconds() {
+    return Math.floor(Date.now() / 1000);
+}
+
 export default { fNow };

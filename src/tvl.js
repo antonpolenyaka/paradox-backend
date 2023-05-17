@@ -1,29 +1,52 @@
 import { selectError } from './lib/errorManager.js';
 import GenericEntityModel from './models/GenericEntityModel.js';
 import MongoDB from './models/MongoDB.js';
-import { ethers } from "ethers";
-import { parseUnits } from 'ethers';
-import { HDNodeWallet } from 'ethers/wallet';
+import { ethers, Contract, formatUnits } from "ethers";
 import logger from './logger.js';
-import { fNow } from './lib/dateTimeUtils.js';
+import { fNow, unixTimestamp, unixTimestampInSeconds } from './lib/dateTimeUtils.js';
+import dotenv from "dotenv";
 
-// Formate date
-function mostrarFecha(verFecha) {
+dotenv.config();
 
-    let fecha, mes, anio;
+async function getTVL() {
+    const provider = new ethers.JsonRpcProvider(process.env.HTTP_WEB_SOCKET_JSON_RPC_SERVER);
+    const blockNumber = await provider.getBlockNumber();
+    const abi = [
+        "function decimals() public view returns (uint8)",
+        "function symbol() public view returns (string memory)",
+        "function balanceOf(address account) public view returns (uint256)"
+    ];
 
-    fecha = verFecha.getDate();
-    mes = verFecha.getMonth() + 1;
-    anio = verFecha.getFullYear();
+    // Create a contract
+    const contract = new Contract(process.env.PARADOX_TOKEN_ADDRESS, abi, provider);
 
-    fecha = fecha.toString().padStart(2, '0');
-    mes = mes.toString().padStart(2, '0');
+    // The symbol name for the token
+    const sym = await contract.symbol();
+    // 'DAI'
 
-    return `${fecha}-${mes}-${anio}`;
-}
+    // The number of decimals the token uses
+    const decimals = await contract.decimals();
+    // 18n
 
-function getTVL() {
-    const result = mostrarFecha(new Date());
+    // Read the token balance for an account
+    const balance = await contract.balanceOf(process.env.STAKE_POOL_CONTRACT);
+    // 201469770000000000000000n
+
+    // Format the balance for humans, such as in a UI
+    const balanceHuman = formatUnits(balance, decimals);
+
+    const blockTimestamp = 0;
+
+    const result = {
+        blockNumber,
+        sym, 
+        decimals: decimals.toString(),
+        balance: balance.toString(),
+        balanceHuman,
+        unixTimestamp: unixTimestamp(),
+        unixTimestampInSeconds: unixTimestampInSeconds(),
+        blockTimestamp
+    };
     return result;
 }
 
@@ -51,7 +74,7 @@ async function insertTVL(tvlData) {
         dbLocal = db;
 
         // Make query
-        let query = { tvlData };
+        let query = tvlData;
         query.updateTimestamp = Date.now();
         query.type = entityType;
 
@@ -101,13 +124,11 @@ async function insertTVL(tvlData) {
 export async function processTVL() {
     try {
         // Get TVL from Blockchain
-        let resultBlockchain = getTVL();
-        logger.info(fNow() + ' Result Blockchain: ' + resultBlockchain);
+        let resultBlockchain = await getTVL();
+        logger.info(fNow() + ' Result Blockchain: ' + JSON.stringify(resultBlockchain));
         // Save TVL in Database
         let resultDB = await insertTVL(resultBlockchain);
-        if(typeof(resultDB) === 'object') {
-            resultDB = JSON.stringify(resultDB);
-        }
+        resultDB = JSON.stringify(resultDB);
         logger.info(fNow() + ' Result Database: ' + resultDB);
     } catch (err) {
         logger.error(fNow() + " processTVL() " + err);
