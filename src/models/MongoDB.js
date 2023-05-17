@@ -7,10 +7,10 @@ dotenv.config();
 let MongoClient = mongo.MongoClient;
 
 class MongoDB {
-
     static Connect() {
-        return MongoClient.connect(process.env.DB_CONNECTION_STRING)
-            .then(mc => { // mongoClient
+        const mc = new MongoClient(process.env.DB_CONNECTION_STRING, { useUnifiedTopology: true });
+        return mc.connect()
+            .then(() => {
                 let db = mc.db(process.env.DB_DATABASE);
                 return { mc, db };
             });

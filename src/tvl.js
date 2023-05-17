@@ -3,10 +3,23 @@ import GenericEntityModel from './models/GenericEntityModel.js';
 import MongoDB from './models/MongoDB.js';
 import { ethers, Contract, formatUnits } from "ethers";
 import logger from './logger.js';
-import { fNow, unixTimestamp, unixTimestampInSeconds } from './lib/dateTimeUtils.js';
+import { fNow, unixTimestampInMilliseconds, unixTimestamp } from './lib/dateTimeUtils.js';
 import dotenv from "dotenv";
 
 dotenv.config();
+
+async function getLatestBlockTimestamp(provider) {
+    // Obtener el número del último bloque minado
+    const latestBlockNumber = await provider.getBlockNumber();
+
+    // Obtener información del último bloque
+    const latestBlock = await provider.getBlock(latestBlockNumber);
+
+    // Obtener el timestamp del último bloque
+    const timestamp = latestBlock?.timestamp;
+
+    return timestamp;
+}
 
 async function getTVL() {
     const provider = new ethers.JsonRpcProvider(process.env.HTTP_WEB_SOCKET_JSON_RPC_SERVER);
@@ -22,20 +35,17 @@ async function getTVL() {
 
     // The symbol name for the token
     const sym = await contract.symbol();
-    // 'DAI'
 
     // The number of decimals the token uses
     const decimals = await contract.decimals();
-    // 18n
 
     // Read the token balance for an account
     const balance = await contract.balanceOf(process.env.STAKE_POOL_CONTRACT);
-    // 201469770000000000000000n
 
     // Format the balance for humans, such as in a UI
     const balanceHuman = formatUnits(balance, decimals);
 
-    const blockTimestamp = 0;
+    const blockTimestamp = await getLatestBlockTimestamp(provider);
 
     const result = {
         blockNumber,
@@ -43,9 +53,9 @@ async function getTVL() {
         decimals: decimals.toString(),
         balance: balance.toString(),
         balanceHuman,
+        unixTimestamp: unixTimestampInMilliseconds(),
         unixTimestamp: unixTimestamp(),
-        unixTimestampInSeconds: unixTimestampInSeconds(),
-        blockTimestamp
+        blockTimestamp: blockTimestamp ?? 0
     };
     return result;
 }
@@ -75,7 +85,7 @@ async function insertTVL(tvlData) {
 
         // Make query
         let query = tvlData;
-        query.updateTimestamp = Date.now();
+        query.updateTimestamp = unixTimestamp();
         query.type = entityType;
 
         logger.debug(fNow() + ' Start insert data in Database');
